@@ -1,0 +1,10 @@
+Strategy summary:
+
+- For each coin, calculate a 360-period moving average (MA) on hourly close prices.
+- Generate a long entry signal when the MA increases by more than 1 basis point from the previous period (ma_change > 1).
+- Enter at the previous close when the signal switches from 0 to 1; exit at the current close when it switches from 1 to 0.
+- Compute PnL for each trade, and track cumulative PnL.
+- Combine results for a portfolio of coins using specified weights.
+- Calculate and record drawdown statistics for each asset and the portfolio.
+
+This is a simple trend-following strategy based on MA momentum, tested on multiple crypto assets and aggregated into a weighted portfolio.
