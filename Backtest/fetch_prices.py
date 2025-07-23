@@ -6,6 +6,23 @@ from datetime import datetime, timedelta
 def fetch_binance_klines(symbol='BTCUSDT', interval='1h', start_str='2023-01-01', end_str=None, save_path='data.csv'):
     base_url = 'https://api.binance.com/api/v3/klines'
     limit = 1000
+    # Map interval string to milliseconds for proper cursor advance
+    interval_ms = {
+        "1m": 60_000,
+        "3m": 180_000,
+        "5m": 300_000,
+        "15m": 900_000,
+        "30m": 1_800_000,
+        "1h": 3_600_000,
+        "2h": 7_200_000,
+        "4h": 14_400_000,
+        "6h": 21_600_000,
+        "8h": 28_800_000,
+        "12h": 43_200_000,
+        "1d": 86_400_000,
+    }
+    if interval not in interval_ms:
+        raise ValueError(f"Unsupported interval: {interval}")
     start_ts = int(pd.to_datetime(start_str).timestamp() * 1000)
     end_ts = int(pd.to_datetime(end_str).timestamp() * 1000) if end_str else int(time.time() * 1000)
 
@@ -20,7 +37,7 @@ def fetch_binance_klines(symbol='BTCUSDT', interval='1h', start_str='2023-01-01'
 
         all_candles.extend(data)
         last_ts = data[-1][0]
-        start_ts = last_ts + 1
+        start_ts = last_ts + interval_ms[interval]
         time.sleep(0.5)  # sleep to avoid hitting the rate limit
 
     df = pd.DataFrame(all_candles, columns=[

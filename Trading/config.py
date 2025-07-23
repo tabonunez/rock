@@ -1,31 +1,10 @@
 # Configuration for live trading bot
 
 # API keys are now stored in secret_keys.py for security. DO NOT commit secret_keys.py to version control!
-from secret_keys import BINANCE_API_KEY, BINANCE_API_SECRET
+from trading.secret_keys import BINANCE_API_KEY, BINANCE_API_SECRET
 
 
 
-
-# Trading symbols (USDT perpetuals)
-SYMBOLS = [
-    "BTCUSDT", "ETHUSDT", "XRPUSDT", "SOLUSDT", "TRXUSDT", "DOGEUSDT", "ADAUSDT", "PEPEUSDT", "AAVEUSDT", "LINKUSDT", "AVAXUSDT", "UNIUSDT"
-]
-
-# Portfolio weights as a dictionary (symbol: weight)
-PORTFOLIO_WEIGHTS = {
-    "BTCUSDT": 0.25,
-    "ETHUSDT": 0.10,
-    "XRPUSDT": 0.18,
-    "SOLUSDT": 0.17,
-    "TRXUSDT": 0.05,
-    "DOGEUSDT": 0.10,
-    "ADAUSDT": 0.05,
-    "PEPEUSDT": 0.058,
-    "AAVEUSDT": 0.015,
-    "LINKUSDT": 0.012,
-    "AVAXUSDT": 0.008,
-    "UNIUSDT": 0.007,
-}
 
 
 SYMBOLS = ["SOLUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "AAVEUSDT", "DOTUSDT"]
@@ -131,4 +110,4 @@ SAFE_REQUESTS_PER_MINUTE = 900
 BASE_URL = "https://fapi.binance.com"  # Binance Futures API endpoint
 
 # Logging
-LOG_FILE = "trade_log.txt"
+LOG_FILE = "trade_log.csv"

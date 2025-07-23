@@ -3,7 +3,7 @@ import time
 import hmac
 import hashlib
 import urllib.parse
-from config import BINANCE_API_KEY, BINANCE_API_SECRET, BASE_URL, SAFE_REQUESTS_PER_MINUTE
+from trading.config import BINANCE_API_KEY, BINANCE_API_SECRET, BASE_URL, SAFE_REQUESTS_PER_MINUTE
 
 class BinanceAPI:
     def __init__(self):
@@ -27,7 +27,7 @@ class BinanceAPI:
             resp.raise_for_status()
             print(f"Set leverage {leverage}x for {symbol}")
         except Exception as e:
-            print(f"Failed to set leverage for {symbol}: {e}")
+            self._handle_unauthorized(e, context=f'set leverage for {symbol}')
 
     def _sign(self, params):
         query_string = urllib.parse.urlencode(params)
@@ -67,14 +67,38 @@ class BinanceAPI:
         resp.raise_for_status()
         return resp.json()
 
-    def get_position(self, symbol):
-        self._rate_limit()
-        url = f"{self.base_url}/fapi/v2/positionRisk"
-        params = {"symbol": symbol, "timestamp": int(time.time() * 1000)}
-        params["signature"] = self._sign(params)
-        resp = requests.get(url, params=params, headers=self._headers())
-        resp.raise_for_status()
-        return resp.json()
+    from trading.utils import circuit_breaker
+
+    @circuit_breaker(max_failures=5, cooldown=600)
+    def _handle_unauthorized(self, exc: Exception, context: str = ""):
+        """If exception contains 401 status, print public IP address for debugging."""
+        status_code = None
+        if hasattr(exc, "response") and exc.response is not None:
+            status_code = getattr(exc.response, "status_code", None)
+        if status_code == 401:
+            ip = None
+            try:
+                ip = requests.get("https://api.ipify.org", timeout=3).text.strip()
+            except Exception:
+                ip = "<unable to fetch>"
+            print(f"401 Unauthorized while {context}. Public IP: {ip}. Error: {exc}")
+        else:
+            print(f"Failed while {context}: {exc}")
+
+    def get_position(self, symbol, max_retries=3):
+        for attempt in range(max_retries):
+            try:
+                self._rate_limit()
+                url = f"{self.base_url}/fapi/v2/positionRisk"
+                params = {"symbol": symbol, "timestamp": int(time.time() * 1000)}
+                params["signature"] = self._sign(params)
+                resp = requests.get(url, params=params, headers=self._headers())
+                resp.raise_for_status()
+                return resp.json()
+            except requests.exceptions.RequestException as e:
+                self._handle_unauthorized(e, context=f'fetching position for {symbol} (attempt {attempt+1})')
+                time.sleep(2 * (attempt + 1))  # exponential backoff
+        raise Exception(f"Failed to fetch position for {symbol} after {max_retries} attempts.")
 
     def get_open_orders(self, symbol):
         self._rate_limit()

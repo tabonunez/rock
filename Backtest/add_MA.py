@@ -28,3 +28,22 @@ def add_ma_change(file_path='data_with_ma.csv', ma_column='ma_360', output_path=
     #print(f"Added ma_change and position_bool, saved to {output_path}")
     return df
 
+def add_ma_change_short(file_path='data_with_ma.csv', ma_column='ma_360', output_path='data_with_ma_change_short.csv'):
+    df = pd.read_csv(file_path, parse_dates=['timestamp'], index_col='timestamp')
+    df.sort_index(inplace=True)
+
+    df['ma_prev'] = df[ma_column].shift(1)
+    df['ma_change'] = ((df[ma_column] / df['ma_prev']) - 1) * 10000  # in basis points
+
+    # Add MA200 for trend filter
+    df['ma_200'] = df['close'].rolling(window=360).mean()
+
+    # 1 if change < -3bp, else 0 (stronger signal)
+    df['position_bool'] = (df['ma_change'] < -1.5).astype(int)
+
+    df.dropna(inplace=True)
+    df.to_csv(output_path)
+    #print(f"Added ma_change, MA200, and position_bool for short, saved to {output_path}")
+    return df
+
+

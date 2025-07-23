@@ -1,6 +1,6 @@
 import pandas as pd
 from collections import deque
-from config import MA_PERIOD, MA_BASIS_POINTS
+from trading.config import MA_PERIOD, MA_BASIS_POINTS
 
 class SignalEngine:
     def __init__(self):
@@ -17,7 +17,7 @@ class SignalEngine:
     def compute_signal(self, symbol):
         ph = self.price_history[symbol]
         if len(ph) < MA_PERIOD:
-            return 0  # not enough data
+            return None  # not enough data
         ma = sum(ph) / MA_PERIOD
         prev_ma = self.last_ma.get(symbol, ma)
         ma_change = ((ma / prev_ma) - 1) * 10000 if prev_ma != 0 else 0

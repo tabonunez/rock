@@ -1,8 +1,8 @@
 import time
-from binance_api import BinanceAPI
-from signal_engine import SignalEngine
-from trade_executor import TradeExecutor
-from config import SYMBOLS, TOTAL_TRADE_AMOUNT_USDT, PORTFOLIO_WEIGHTS, LOG_FILE
+from trading.binance_api import BinanceAPI
+from trading.signal_engine import SignalEngine
+from trading.trade_executor import TradeExecutor
+from trading.config import SYMBOLS, TOTAL_TRADE_AMOUNT_USDT, PORTFOLIO_WEIGHTS, LOG_FILE
 
 api = BinanceAPI()
 signal_engine = SignalEngine()
@@ -70,8 +70,9 @@ while True:
                 notional = result['notional']
                 from datetime import datetime
                 now = datetime.now()
-                with open(LOG_FILE, "a") as f:
-                    f.write(f"ENTRY,{symbol},{close},{vwap},{notional},{time.time()},{now.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                from trading.utils import log_trade_csv
+                log_trade_csv(LOG_FILE, ['action','symbol','signal_price','vwap','notional','epoch','human_time'],
+                               ['ENTRY', symbol, close, vwap, notional, time.time(), now.strftime('%Y-%m-%d %H:%M:%S')])
             else:
                 print(f"ENTRY signal for {symbol} at {close}, but position already open: {position_amt}")
         elif signal == "exit":
@@ -93,8 +94,9 @@ while True:
                 result = trade_executor.execute_order(symbol, side, exit_notional, close)
                 vwap = result['vwap']
                 notional = result['notional']
-                with open(LOG_FILE, "a") as f:
-                    f.write(f"EXIT,{symbol},{exit_price},{vwap},{notional},{exit_epoch},{exit_human}\n")
+                from trading.utils import log_trade_csv
+                log_trade_csv(LOG_FILE, ['action','symbol','signal_price','vwap','notional','epoch','human_time'],
+                               ['EXIT', symbol, exit_price, vwap, notional, exit_epoch, exit_human])
                 if abs(position_amt) < 1e-8:
                     print(f"Successfully closed all position for {symbol}")
                 else:

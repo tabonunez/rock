@@ -5,18 +5,7 @@ from drawdown import add_max_drawdown
 from portfolio import combine_weighted_portfolio
 coins = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT",'LINKUSDT','SUIUSDT','AVAXUSDT']
 
-coins = [
-    "AVAX",  # Avalanche
-    "UNI",   # Uniswap
-]
 
-
-'''
-for coin in coins:
-    path = 'ma_csvs/' + coin +'USDT' + '.csv'
-    path1 = 'csvs/' + coin +'USDT' + '.csv'
-    fetch_binance_klines(coin + 'USDT', '1h', '2023-01-01', '2025-07-01', save_path=path1)
-'''
 coins = [
     "BTC",   # Bitcoin
     "ETH",   # Ethereum
@@ -31,6 +20,15 @@ coins = [
     "AVAX",  # Avalanche
     "UNI",   # Uniswap
 ]
+coins = ["DOT"]
+
+for coin in coins:
+    print(coin)
+    path = 'ma_csvs/' + coin +'USDT' + '.csv'
+    path1 = 'csvs/' + coin +'USDT' + '.csv'
+    fetch_binance_klines(coin + 'USDT', '1h', '2023-01-01', save_path=path1)
+
+
 
 
 

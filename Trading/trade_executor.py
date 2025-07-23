@@ -1,26 +1,44 @@
-from binance_api import BinanceAPI
-from config import get_chunk_size, get_symbol_step_size, get_symbol_min_qty
+from trading.binance_api import BinanceAPI
+from trading.config import get_chunk_size, get_symbol_step_size, get_symbol_min_qty
 import math
 import time
 
-# Helper to round quantity to step size
+from trading.utils import decimal_round
+from decimal import Decimal
+
+# Helper to round quantity to step size using Decimal for precision
 def round_qty_to_step(qty, step):
-    return math.floor(qty / step) * step
+    return float(decimal_round(qty, step))
 
 class TradeExecutor:
     def __init__(self):
         self.api = BinanceAPI()
 
-    def execute_order(self, symbol, side, total_usdt, price, max_retries=3, chunk_size_usdt=None):
+    def execute_order(self, symbol, side, total_usdt, price, max_retries=3, chunk_size_usdt=None, test_mode=False):
         if chunk_size_usdt is None:
             chunk_size_usdt = get_chunk_size(symbol)
+        from trading.config import TOTAL_TRADE_AMOUNT_USDT
+        # In test mode, ensure existing position exposure does not exceed portfolio cap
+        if test_mode:
+            try:
+                pos_info = self.api.get_position(symbol)
+                if isinstance(pos_info, list):
+                    # Binance returns a list; take the first dict
+                    pos_info = pos_info[0]
+                position_amt = float(pos_info.get('positionAmt', 0))  # positive long, negative short
+                current_notional = abs(position_amt) * price
+                if current_notional > TOTAL_TRADE_AMOUNT_USDT:
+                    print(f"[TEST MODE] Skipping order for {symbol}: current position notional {current_notional:.2f} exceeds cap {TOTAL_TRADE_AMOUNT_USDT} USDT")
+                    return {'vwap': None, 'notional': 0, 'qty': 0}
+            except Exception as e:
+                print(f"[TEST MODE] Could not fetch position for {symbol}: {e}. Proceeding without cap check.")
         chunk_qty = chunk_size_usdt / price
         total_qty = total_usdt / price
         filled_qty = 0.0
         chunk_num = 0
         step = get_symbol_step_size(symbol)
         min_qty = get_symbol_min_qty(symbol)
-        from config import get_symbol_min_notional
+        from trading.config import get_symbol_min_notional
         min_notional = get_symbol_min_notional(symbol)
         fills = []  # (fill_price, fill_qty)
         if total_qty < min_qty:

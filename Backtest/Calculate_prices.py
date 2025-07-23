@@ -6,19 +6,20 @@ def add_entry_exit_signals(file_path='data_with_ma_change.csv', output_path='dat
 
     # Calculate volatility regime columns
     df['returns'] = df['close'].pct_change()
-    df['vol_day'] = df['returns'].rolling(window=24).std()
-    df['vol_week'] = df['returns'].rolling(window=168).std()
+    df["volatility"] = df['returns'].rolling(window=20).std()
+    df['vol_day'] = df['volatility'].rolling(window=8).std()
+    df['vol_week'] = df['volatility'].rolling(window=24).std()
     df['vol_regime'] = (df['vol_day'] > df['vol_week'])  # True if daily vol > weekly vol
 
     df['position_bool_prev'] = df['position_bool'].shift(1)
 
     # Entry: prev was 0, now 1 AND NOT in high-vol regime
     df['trade_price'] = None
-    entry_condition = (df['position_bool_prev'] == 0) & (df['position_bool'] == 1) & (~df['vol_regime'])
+    entry_condition = (df['position_bool_prev'] == 0) & (df['position_bool'] == 1) & (~df['vol_regime']== True)
     df.loc[entry_condition, 'trade_price'] = -df['close']
 
-    # Exit: prev was 1, now 0 AND NOT in high-vol regime
-    exit_condition = (df['position_bool_prev'] == 1) & (df['position_bool'] == 0) & (~df['vol_regime'])
+    # Exit: prev was 1, now 0 AND vol_regime is False
+    exit_condition = (df['position_bool_prev'] == 1) & (df['position_bool'] == 0) & (df['vol_regime'] == False)
     df.loc[exit_condition, 'trade_price'] = df['close']
 
     df.drop(columns=['position_bool_prev'], inplace=True)
